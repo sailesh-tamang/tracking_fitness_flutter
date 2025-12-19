@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tracking_fitness_flutter/screens/dashboard_screen.dart';
 import 'package:tracking_fitness_flutter/screens/login_screen.dart';
 import 'package:tracking_fitness_flutter/screens/splash_screen.dart';
 

@@ -156,3 +156,34 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+//
+// import 'package:flutter/material.dart';
+//
+// class LoginScreen extends StatefulWidget {
+//   const LoginScreen({super.key});
+//
+//   @override
+//   State<LoginScreen> createState() => _LoginScreenState();
+// }
+//
+// class _LoginScreenState extends State<LoginScreen> {
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text("LOGIN "),
+//       ),
+//       body: SafeArea(child: Padding(padding:  const EdgeInsets.all(20),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             const Text("welcome to Health Sync")
+//           ],
+//         ),
+//       ),
+//       ),
+//
+//     );
+//   }
+// }
+//
