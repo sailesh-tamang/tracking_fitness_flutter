@@ -6,8 +6,9 @@ class Profile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.black,//this is the background color to main
       appBar: AppBar(title: Text("profile", style: TextStyle(color: Colors.white),),backgroundColor: Colors.black,
+
       ),
     );
   }
