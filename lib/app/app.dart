@@ -1,6 +1,5 @@
+import 'package:fitness_tracking/features/splash/presentation/pages/splash_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:lost_n_found/features/splash/presentation/pages/splash_screen.dart';
-
 
 
 class App extends StatelessWidget {
