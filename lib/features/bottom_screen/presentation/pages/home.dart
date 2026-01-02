@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tracking_fitness_flutter/app/app.dart';
 
 class Home extends StatelessWidget {
   const Home({super.key});

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:tracking_fitness_flutter/features/bottom_screen/presentation/pages/excerise_plan.dart';
-import 'package:tracking_fitness_flutter/features/bottom_screen/presentation/pages/home.dart';
-import 'package:tracking_fitness_flutter/features/bottom_screen/presentation/pages/meal_plan.dart';
-import 'package:tracking_fitness_flutter/features/bottom_screen/presentation/pages/profile.dart';
+import 'package:lost_n_found/features/bottom_screen/presentation/pages/excerise_plan.dart';
+import 'package:lost_n_found/features/bottom_screen/presentation/pages/home.dart';
+import 'package:lost_n_found/features/bottom_screen/presentation/pages/meal_plan.dart';
+import 'package:lost_n_found/features/bottom_screen/presentation/pages/profile.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
