@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'login_screen.dart';
+import 'package:fitness_tracking/features/auth/domain/usecases/register_usecase.dart';
 
-class SignupScreen extends StatefulWidget {
+class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends ConsumerState<SignupScreen> {
   final TextEditingController name = TextEditingController();
   final TextEditingController email = TextEditingController();
   final TextEditingController phone = TextEditingController();
   final TextEditingController password = TextEditingController();
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -70,12 +73,40 @@ class _SignupScreenState extends State<SignupScreen> {
 
               /// Create Account Button
               GestureDetector(
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => LoginScreen()),
-                  );
-                },
+                onTap: _isLoading
+                    ? null
+                    : () async {
+                        final fullName = name.text.trim();
+                        final mail = email.text.trim();
+                        final phoneNumber = phone.text.trim();
+                        final pwd = password.text;
+                        if (fullName.isEmpty || mail.isEmpty || pwd.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please fill all fields')));
+                          return;
+                        }
+                        setState(() => _isLoading = true);
+                        final usecase = ref.read(registerUsecaseProvider);
+                        final params = RegisterParams(
+                          fullName: fullName,
+                          email: mail,
+                          phoneNumber: phoneNumber,
+                          password: pwd,
+                        );
+                        final result = await usecase.call(params);
+                        setState(() => _isLoading = false);
+                        result.fold((failure) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(failure.message)));
+                        }, (success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Registration successful')));
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => LoginScreen()),
+                          );
+                        });
+                      },
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 15),
@@ -83,14 +114,20 @@ class _SignupScreenState extends State<SignupScreen> {
                     color: Color(0xffD4FF00),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Center(
-                    child: Text(
-                      "Create Account",
-                      style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold),
-                    ),
+                  child: Center(
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text(
+                            "Create Account",
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ),
               ),
