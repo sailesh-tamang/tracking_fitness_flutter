@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'signup_screen.dart';
 import '../../../dashboard/presentation/pages/dashboard_screen.dart';
+import 'package:fitness_tracking/features/auth/domain/usecases/login_usecase.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -78,10 +81,33 @@ class _LoginScreenState extends State<LoginScreen> {
 
               /// Login Button
               GestureDetector(
-                onTap: () {
-                  Navigator.pushReplacement(
-                      context, MaterialPageRoute(builder: (_) => DashboardScreen()));
-                },
+                onTap: _isLoading
+                    ? null
+                    : () async {
+                        final mail = emailController.text.trim();
+                        final pwd = passwordController.text;
+                        if (mail.isEmpty || pwd.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please fill all fields')));
+                          return;
+                        }
+                        setState(() => _isLoading = true);
+                        final usecase = ref.read(loginUsecaseProvider);
+                        final params = LoginParams(email: mail, password: pwd);
+                        final result = await usecase.call(params);
+                        setState(() => _isLoading = false);
+                        result.fold((failure) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(failure.message)));
+                        }, (auth) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Login successful')));
+                          Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const DashboardScreen()));
+                        });
+                      },
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 15),
@@ -89,12 +115,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Color(0xffD4FF00),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Center(
-                    child: Text("Login",
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold)),
+                  child: Center(
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text("Login",
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),
