@@ -1,10 +1,10 @@
-import 'package:fitness_tracking/core/constants/hive_table_constants.dart';
-import 'package:fitness_tracking/features/auth/domain/entities/auth_entity.dart';
+
+import 'package:fitness_tracker/core/constants/hive_table_constants.dart';
+import 'package:fitness_tracker/features/auth/domain/entities/auth_entity.dart';
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
 
 part 'auth_hive_model.g.dart';
-
 
 @HiveType(typeId: HiveTableConstants.authTypeId)
 class AuthHiveModel extends HiveObject {

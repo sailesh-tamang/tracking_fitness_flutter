@@ -1,7 +1,8 @@
+import 'package:fitness_tracker/features/auth/domain/usecases/register_usecase.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'login_screen.dart';
-import 'package:fitness_tracking/features/auth/domain/usecases/register_usecase.dart';
+
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});

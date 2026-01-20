@@ -1,9 +1,11 @@
-import 'package:fitness_tracking/features/bottom_screen/presentation/pages/excerise_plan.dart';
-import 'package:fitness_tracking/features/bottom_screen/presentation/pages/home.dart';
-import 'package:fitness_tracking/features/bottom_screen/presentation/pages/meal_plan.dart';
-import 'package:fitness_tracking/features/bottom_screen/presentation/pages/profile.dart';
-import 'package:flutter/material.dart';
 
+
+
+import 'package:fitness_tracker/features/bottom_screen/presentation/pages/excerise_plan.dart';
+import 'package:fitness_tracker/features/bottom_screen/presentation/pages/home.dart';
+import 'package:fitness_tracker/features/bottom_screen/presentation/pages/meal_plan.dart';
+import 'package:fitness_tracker/features/bottom_screen/presentation/pages/profile.dart';
+import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});

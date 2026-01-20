@@ -1,5 +1,5 @@
-name: fitness_tracking
-description: "fitness tracking mobile application"
+name: fitness_tracker
+description: "fitness tracking app"
 
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
@@ -29,6 +29,7 @@ dependencies:
   # Networking
   dio: ^5.4.1
   dio_smart_retry: ^7.0.1
+  pretty_dio_logger: ^1.4.0
   connectivity_plus: ^7.0.0
 
   # Authentication
@@ -53,7 +54,6 @@ dependencies:
   # Utilities
   freezed_annotation: ^3.1.0
   json_annotation: ^4.8.1
-  either_dart: ^1.0.0
   uuid: ^4.3.3
   intl: ^0.20.2
 
@@ -89,19 +89,21 @@ flutter:
 
   # Custom Fonts
   fonts:
-    - family: Inter
+    - family: OpenSans
       fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/OpenSans-Regular.ttf
           weight: 400
-        - asset: assets/fonts/Inter-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Inter-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Inter-Bold.ttf
+        - asset: assets/fonts/OpenSans-Bold.ttf
           weight: 700
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Montserrat-BoldItalic.ttf
+          weight: 700
+          style: italic
 
   # Assets
   assets:
-    - assets/icons/
     - assets/images/
     - assets/fonts/

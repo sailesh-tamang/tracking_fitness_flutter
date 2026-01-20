@@ -1,8 +1,8 @@
+import 'package:fitness_tracker/features/auth/domain/usecases/login_usecase.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'signup_screen.dart';
 import '../../../dashboard/presentation/pages/dashboard_screen.dart';
-import 'package:fitness_tracking/features/auth/domain/usecases/login_usecase.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -57,7 +57,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               /// Email Field
               buildField(
                 controller: emailController,
-                label: "Email Or Phone",
+                label: "Email",
               ),
 
               const SizedBox(height: 20),

@@ -1,12 +1,12 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
-import 'package:fitness_tracking/core/error/failures.dart';
-import 'package:fitness_tracking/core/usecases/app_usecase.dart';
-import 'package:fitness_tracking/features/auth/data/repositories/auth_repository.dart';
-import 'package:fitness_tracking/features/auth/domain/entities/auth_entity.dart';
-import 'package:fitness_tracking/features/auth/domain/repositories/auth_repositories.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fitness_tracker/core/error/failures.dart';
+import 'package:fitness_tracker/core/usecases/app_usecase.dart';
+import 'package:fitness_tracker/features/auth/data/repositories/auth_repository.dart';
+import 'package:fitness_tracker/features/auth/domain/entities/auth_entity.dart';
+import 'package:fitness_tracker/features/auth/domain/repositories/auth_repositories.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class RegisterParams extends Equatable{
 
