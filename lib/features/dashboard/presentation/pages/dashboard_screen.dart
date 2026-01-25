@@ -22,7 +22,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const Home(),
     const MealPlan(),
     const ExcerisePlan(),
-    const Profile(),
+    const ProfileScreen(),
 
   ];
   @override
