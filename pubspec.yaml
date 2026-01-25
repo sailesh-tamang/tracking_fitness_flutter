@@ -107,3 +107,8 @@ flutter:
   assets:
     - assets/images/
     - assets/fonts/
+
+  # flutter_launcher_icons:
+  #   android: "launcher_icon"
+  #   image_path: "assets/icons/app_icon.png"
+
