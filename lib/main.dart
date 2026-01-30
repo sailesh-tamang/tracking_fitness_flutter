@@ -1,4 +1,3 @@
-
 import 'package:fitness_tracker/core/services/hive/hive_service.dart';
 import 'package:fitness_tracker/core/services/storage/user_session_service.dart';
 import 'package:flutter/material.dart';
@@ -10,9 +9,11 @@ import 'app/app.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final hiveService = HiveService();
-  await hiveService.init();
-  await hiveService.openboxes();
+  // final hiveService = HiveService();
+  // await hiveService.init();
+  // await hiveService.openboxes();
+
+  await HiveService().init();
 
   final sharedPreferences = await SharedPreferences.getInstance();
 

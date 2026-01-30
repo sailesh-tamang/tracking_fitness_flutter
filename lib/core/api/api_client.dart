@@ -5,19 +5,18 @@ import 'package:fitness_tracker/core/services/storage/user_session_service.dart'
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Provider for ApiClient
 final apiClientProvider = Provider<ApiClient>((ref) {
-  final userSessionService = ref.read(userSessionServiceProvider);
-  return ApiClient(userSessionService: userSessionService);
+  final prefs = ref.read(sharedPreferencesProvider);
+  return ApiClient(sharedPreferences: prefs);
 });
 
 class ApiClient {
   late final Dio _dio;
-  final UserSessionService _userSessionService;
 
-  ApiClient({required UserSessionService userSessionService})
-      : _userSessionService = userSessionService {
+  ApiClient({required SharedPreferences sharedPreferences}) {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiEndpoints.baseUrl,
@@ -31,7 +30,7 @@ class ApiClient {
     );
 
     // Add interceptors
-    _dio.interceptors.add(_AuthInterceptor(userSessionService: _userSessionService));
+    _dio.interceptors.add(_AuthInterceptor(sharedPreferences));
 
     // Auto retry on network failures
     _dio.interceptors.add(
@@ -131,10 +130,24 @@ class ApiClient {
     Options? options,
     ProgressCallback? onSendProgress,
   }) async {
+    // Ensure we don't force a JSON content-type for multipart uploads so
+    // Dio can set the proper multipart boundary header.
+    final baseHeaders = <String, dynamic>{};
+    if (options?.headers != null) {
+      baseHeaders.addAll(Map<String, dynamic>.from(options!.headers!));
+    }
+    // Remove any existing Content-Type to let Dio set multipart/form-data with boundary
+    baseHeaders.remove('Content-Type');
+    
+    final finalOptions = (options ?? Options()).copyWith(
+      headers: baseHeaders,
+      contentType: null,
+    );
+
     return _dio.post(
       path,
       data: formData,
-      options: options,
+      options: finalOptions,
       onSendProgress: onSendProgress,
     );
   }
@@ -142,10 +155,10 @@ class ApiClient {
 
 // Auth Interceptor to add JWT token to requests
 class _AuthInterceptor extends Interceptor {
-  final UserSessionService _userSessionService;
+  final SharedPreferences _storage;
+  static const String _tokenKey = 'auth_token';
 
-  _AuthInterceptor({required UserSessionService userSessionService})
-      : _userSessionService = userSessionService;
+  _AuthInterceptor(this._storage);
 
   @override
   void onRequest(
@@ -155,8 +168,6 @@ class _AuthInterceptor extends Interceptor {
     // Skip auth for public endpoints
     final publicEndpoints = [
       ApiEndpoints.customers,
-      ApiEndpoints.customerLogin,
-      ApiEndpoints.customerRegister,
     ];
 
     final isPublicGet =
@@ -164,14 +175,16 @@ class _AuthInterceptor extends Interceptor {
         publicEndpoints.any((endpoint) => options.path.startsWith(endpoint));
 
     final isAuthEndpoint =
-        options.path.endsWith(ApiEndpoints.customerLogin) ||
-        options.path.endsWith(ApiEndpoints.customerRegister) ||
-        options.path.endsWith(ApiEndpoints.customers);
+        options.path == ApiEndpoints.customerLogin ||
+        options.path == ApiEndpoints.customers;
 
     if (!isPublicGet && !isAuthEndpoint) {
-      final token = await _userSessionService.getToken();
+      final token = _storage.getString(_tokenKey);
       if (token != null) {
         options.headers['Authorization'] = 'Bearer $token';
+        print('✅ Token added to request for ${options.path}');
+      } else {
+        print('⚠️ No token found in SharedPreferences for ${options.path}');
       }
     }
 
@@ -183,7 +196,7 @@ class _AuthInterceptor extends Interceptor {
     // Handle 401 Unauthorized - token expired
     if (err.response?.statusCode == 401) {
       // Clear token and redirect to login
-      _userSessionService.clearSession();
+      _storage.remove(_tokenKey);
       // You can add navigation logic here or use a callback
     }
     handler.next(err);
