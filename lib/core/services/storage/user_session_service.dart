@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // SharedPreferences instance provider
@@ -15,7 +14,6 @@ final userSessionServiceProvider = Provider<UserSessionService>((ref) {
 
 class UserSessionService {
   final SharedPreferences _prefs;
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   // Keys for storing user data
   static const String _keyIsLoggedIn = 'is_logged_in';
@@ -23,7 +21,7 @@ class UserSessionService {
   static const String _keyUserEmail = 'user_email';
   static const String _keyUserFullName = 'user_full_name';
   static const String _keyUserPhoneNumber = 'user_phone_number';
-  static const String _keyToken = 'auth_token';
+  static const String _keyUserProfilePicture = 'user_profile_picture';
 
   UserSessionService({required SharedPreferences prefs}) : _prefs = prefs;
 
@@ -33,6 +31,7 @@ class UserSessionService {
     required String email,
     required String fullName,
     String? phoneNumber,
+    String? profilePicture,
   }) async {
     await _prefs.setBool(_keyIsLoggedIn, true);
     await _prefs.setString(_keyUserId, userId);
@@ -40,6 +39,9 @@ class UserSessionService {
     await _prefs.setString(_keyUserFullName, fullName);
     if (phoneNumber != null) {
       await _prefs.setString(_keyUserPhoneNumber, phoneNumber);
+    }
+    if (profilePicture != null) {
+      await _prefs.setString(_keyUserProfilePicture, profilePicture);
     }
   }
 
@@ -68,16 +70,19 @@ class UserSessionService {
     return _prefs.getString(_keyUserPhoneNumber);
   }
 
-  // Save token
-  Future<void> saveToken(String token) async {
-    await _secureStorage.write(key: _keyToken, value: token);
+  // Get current user profile picture
+  String? getCurrentUserProfilePicture() {
+    final picture = _prefs.getString(_keyUserProfilePicture);
+    print('📸 Getting profile picture from session: $picture');
+    return picture;
   }
 
-  // Get token
-  Future<String?> getToken() async {
-    return await _secureStorage.read(key: _keyToken);
+  // Update user profile picture (after successful upload)
+  Future<void> updateUserProfilePicture(String pictureFileName) async {
+    await _prefs.setString(_keyUserProfilePicture, pictureFileName);
+    final saved = _prefs.getString(_keyUserProfilePicture);
+    print('💾 Saved profile picture to session. Verified: $saved');
   }
-
 
   // Clear user session (logout)
   Future<void> clearSession() async {
@@ -86,6 +91,6 @@ class UserSessionService {
     await _prefs.remove(_keyUserEmail);
     await _prefs.remove(_keyUserFullName);
     await _prefs.remove(_keyUserPhoneNumber);
-    await _secureStorage.delete(key: _keyToken);
+    await _prefs.remove(_keyUserProfilePicture);
   }
 }

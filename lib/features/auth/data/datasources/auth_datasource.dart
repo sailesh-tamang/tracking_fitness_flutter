@@ -1,7 +1,10 @@
 
 
+import 'dart:io';
+
 import 'package:fitness_tracker/features/auth/data/models/auth_api_model.dart';
-import 'package:fitness_tracker/features/auth/data/models/auth_hive_model.dart';
+
+import '../models/auth_hive_model.dart';
 
 abstract interface class IAuthLocalDataSource {
   Future<AuthHiveModel> register(AuthHiveModel user);
@@ -16,5 +19,5 @@ abstract interface class IAuthRemoteDataSource {
   Future<AuthApiModel> register(AuthApiModel user);
   Future<AuthApiModel?> login(String email, String password);
   Future<AuthApiModel?> getUserById(String authId);
-  
+  Future<String> uploadPhoto(File photo);
 }

@@ -1,13 +1,18 @@
-
-
 import 'package:fitness_tracker/features/auth/domain/entities/auth_entity.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'auth_api_model.g.dart';
+
+@JsonSerializable()
 class AuthApiModel {
+  @JsonKey(name: '_id')
   final String? id;
+  @JsonKey(name: 'name')
   final String fullName;
   final String email;
   final String? phoneNumber;
   final String? password;
+  final String? profilePicture;
 
   AuthApiModel({
     this.id,
@@ -15,29 +20,13 @@ class AuthApiModel {
     required this.email,
     this.phoneNumber,
     this.password,
+    this.profilePicture,
   });
 
-  // toJSON
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': fullName,
-      'email': email,
-      'phoneNumber': phoneNumber,
-      'password': password,
-    };
-  }
+  Map<String, dynamic> toJson() => _$AuthApiModelToJson(this);
 
-  // fromJson
-  factory AuthApiModel.fromJson(Map<String, dynamic> json) {
-    return AuthApiModel(
-      id: json['id'] as String? ?? json['_id'] as String?,
-      fullName: json['name'] as String,
-      email: json['email'] as String,
-      phoneNumber: json['phoneNumber'] as String?,
-      password: json['password'] as String?
-    );
-  }
+  factory AuthApiModel.fromJson(Map<String, dynamic> json) =>
+      _$AuthApiModelFromJson(json);
 
   // toEntity
   AuthEntity toEntity() {
@@ -46,7 +35,7 @@ class AuthApiModel {
       fullName: fullName,
       email: email,
       phoneNumber: phoneNumber,
-      password: password
+      profilePicture: profilePicture,
     );
   }
 
@@ -56,8 +45,13 @@ class AuthApiModel {
       fullName: entity.fullName,
       email: entity.email,
       phoneNumber: entity.phoneNumber,
-      password: entity.password
+      password: entity.password,
+      profilePicture: entity.profilePicture,
     );
   }
-  
+
+  // toEntityList
+  static List<AuthEntity> toEntityList(List<AuthApiModel> models) {
+    return models.map((model) => model.toEntity()).toList();
+  }
 }
