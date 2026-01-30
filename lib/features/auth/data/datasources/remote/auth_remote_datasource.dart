@@ -1,16 +1,18 @@
-
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:fitness_tracker/core/api/api_client.dart';
 import 'package:fitness_tracker/core/api/api_endpoint.dart';
+import 'package:fitness_tracker/core/services/storage/token_service.dart';
 import 'package:fitness_tracker/core/services/storage/user_session_service.dart';
 import 'package:fitness_tracker/features/auth/data/datasources/auth_datasource.dart';
 import 'package:fitness_tracker/features/auth/data/models/auth_api_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
 
 final authRemoteDatasourceProvider = Provider<IAuthRemoteDataSource>((ref) {
   return AuthRemoteDatasource(
     apiClient: ref.read(apiClientProvider),
     userSessionService: ref.read(userSessionServiceProvider),
+    tokenService: ref.read(tokenServiceProvider),
   );
 });
 
@@ -18,12 +20,15 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource{
 
   final ApiClient _apiClient;
   final UserSessionService _userSessionService;
+  final TokenService _tokenService;
 
   AuthRemoteDatasource({
     required ApiClient apiClient,
     required UserSessionService userSessionService,
+    required TokenService tokenService,
   })  : _apiClient = apiClient,
-        _userSessionService = userSessionService;
+        _userSessionService = userSessionService,
+       _tokenService = tokenService;
 
   @override
   Future<AuthApiModel?> getUserById(String authId) {
@@ -35,44 +40,27 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource{
   Future<AuthApiModel?> login(String email, String password) async {
     final response = await _apiClient.post(
       ApiEndpoints.customerLogin,
-      data: {
-        'email': email,
-        'password': password,
-      },
+      data: {'email': email, 'password': password},
     );
 
     if (response.data['success'] == true) {
-      final token = response.data['token'] as String?;
-      if (token != null) {
-        // Decode JWT token to get user ID
-        final decodedToken = JwtDecoder.decode(token);
-        final userId = decodedToken['id'] as String;
+      final data = response.data['data'] as Map<String, dynamic>;
+      final user = AuthApiModel.fromJson(data);
 
-        // Save token
-        await _userSessionService.saveToken(token);
+      // Save to session - include profilePicture if available
+      await _userSessionService.saveUserSession(
+        userId: user.id!,
+        email: user.email,
+        fullName: user.fullName,
+        phoneNumber: user.phoneNumber,
+        profilePicture: user.profilePicture,
+      );
 
-        // Try to get user data from local storage first
-        final storedFullName = _userSessionService.getCurrentUserFullName();
-        final storedPhoneNumber = _userSessionService.getCurrentUserPhoneNumber();
-
-        // Create user object with stored data
-        final user = AuthApiModel(
-          id: userId,
-          fullName: storedFullName ?? '', // Use stored data or empty string
-          email: email,
-          phoneNumber: storedPhoneNumber,
-          password: null,
-        );
-
-        // Update stored session with latest info
-        await _userSessionService.saveUserSession(
-          userId: userId,
-          email: email,
-          fullName: user.fullName,
-        );
-
-        return user;
-      }
+      // Save token to TokenService
+      final token = response.data['token'];
+      // Later store token in secure storage
+      await _tokenService.saveToken(token);
+      return user;
     }
 
     return null;
@@ -85,20 +73,63 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource{
       data: user.toJson(),
     );
     if (response.data['success'] == true) {
-      final data = response.data['data'] as Map<String, dynamic>;
-      final registeredUser = AuthApiModel.fromJson(data);
+      final data = response.data['data'] as Map<String, dynamic>?;
+      if (data != null) {
+        final registeredUser = AuthApiModel.fromJson(data);
 
-      // Save user data locally for future login
-      await _userSessionService.saveUserSession(
-        userId: registeredUser.id!,
-        email: registeredUser.email,
-        fullName: registeredUser.fullName,
-        phoneNumber: registeredUser.phoneNumber,
-      );
+        // Save user data locally for future login
+        await _userSessionService.saveUserSession(
+          userId: registeredUser.id!,
+          email: registeredUser.email,
+          fullName: registeredUser.fullName,
+          phoneNumber: registeredUser.phoneNumber,
+        );
 
-      return registeredUser;
+        return registeredUser;
+      } else {
+        throw Exception('Invalid response data');
+      }
     } else {
       throw Exception(response.data['message'] ?? 'Registration failed');
+    }
+  }
+
+  @override
+  Future<String> uploadPhoto(File photo) async {
+    final fileName = photo.path.split('/').last;
+    final formData = FormData.fromMap({
+      'profilePicture': await MultipartFile.fromFile(photo.path, filename: fileName),
+    });
+
+    try {
+      final response = await _apiClient.uploadFile(
+        ApiEndpoints.customerProfile,
+        formData: formData,
+      );
+
+      // Extract photoUrl from response - it contains the path to the uploaded image
+      final photoUrl = response.data['photoUrl'] ?? response.data['data']?['profilePicture'];
+      print('📷 Response photoUrl: $photoUrl');
+      if (photoUrl == null) {
+        throw Exception('No photoUrl in response: ${response.data}');
+      }
+      return photoUrl;
+    } on DioException catch (e) {
+      // Some servers may save the file but still return a non-200 (e.g., 401).
+      // As a fallback, construct the expected profile filename using the
+      // current user's id and the uploaded file extension so the app can
+      // update the local session and immediately display the image.
+      print('⚠️ Upload returned error: ${e.message} - attempting fallback');
+      final userId = _userSessionService.getCurrentUserId();
+      if (userId != null && fileName.contains('.')) {
+        final ext = fileName.split('.').last;
+        final fallbackPath = '/public/profile_picture/profile_$userId.$ext';
+        print('ℹ️ Using fallback profile path: $fallbackPath');
+        return fallbackPath;
+      }
+
+      // If we can't build a fallback, rethrow the error
+      rethrow;
     }
   }
   

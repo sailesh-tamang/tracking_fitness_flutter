@@ -1,3 +1,6 @@
+
+import 'dart:io';
+
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:fitness_tracker/core/error/failures.dart';
@@ -8,9 +11,8 @@ import 'package:fitness_tracker/features/auth/data/datasources/remote/auth_remot
 import 'package:fitness_tracker/features/auth/data/models/auth_api_model.dart';
 import 'package:fitness_tracker/features/auth/data/models/auth_hive_model.dart';
 import 'package:fitness_tracker/features/auth/domain/entities/auth_entity.dart';
+import 'package:fitness_tracker/features/auth/domain/repositories/auth_repositories.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../domain/repositories/auth_repositories.dart' show IAuthRepository;
 
 //provider
 final authRepositoryProvider = Provider<IAuthRepository>((ref) {
@@ -137,6 +139,20 @@ class AuthRepository implements IAuthRepository{
       } catch (e) {
         return Left(LocalDatabaseFailure(message: e.toString()));
       }
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> uploadImage(File image) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final url = await _authRemoteDataSource.uploadPhoto(image);
+        return Right(url);
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return const Left(NetworkFailure(message: 'No internet connection'));
     }
   }
 }
