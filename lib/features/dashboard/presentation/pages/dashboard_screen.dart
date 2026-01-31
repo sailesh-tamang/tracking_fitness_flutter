@@ -1,6 +1,3 @@
-
-
-
 import 'package:fitness_tracker/features/bottom_screen/presentation/pages/excerise_plan.dart';
 import 'package:fitness_tracker/features/bottom_screen/presentation/pages/home.dart';
 import 'package:fitness_tracker/features/bottom_screen/presentation/pages/meal_plan.dart';
