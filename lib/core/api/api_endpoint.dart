@@ -6,7 +6,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   // Configuration
-  static const bool isPhysicalDevice = true; // Set to true for physical device
+  static const bool isPhysicalDevice = false; // Set to true for physical device
   static const String _ipAddress = '192.168.1.107'; // Replace with your computer's actual IP address
   static const int _port = 3000;
 
