@@ -46,14 +46,16 @@ class _ProfileSccreenState extends ConsumerState<ProfileScreen> {
     // print('🔍 ProfileScreen build - Photo URL: $userPhotoUrl');
 
     return Scaffold(
+      backgroundColor: Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Header with gradient background
+              // Header with black background
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
+                  color: Colors.black,
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
                     bottomRight: Radius.circular(32),
@@ -69,7 +71,7 @@ class _ProfileSccreenState extends ConsumerState<ProfileScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -115,20 +117,32 @@ class _ProfileSccreenState extends ConsumerState<ProfileScreen> {
                     const SizedBox(height: 16),
 
                     // User Name and Email
-                    Text(
-                      userName,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        userName,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      userEmail,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        userEmail,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
                       ),
                     ),
                   ],
@@ -260,7 +274,7 @@ class _MenuItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1F1F1F),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Material(
@@ -276,12 +290,12 @@ class _MenuItem extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: (iconColor ?? Colors.lime).withAlpha(26),
+                    color: (iconColor ?? Colors.lime).withAlpha(30),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     icon,
-                    color: iconColor ?? Colors.black,
+                    color: iconColor ?? Colors.cyan,
                     size: 24,
                   ),
                 ),
@@ -292,14 +306,14 @@ class _MenuItem extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: titleColor ?? Colors.lightBlue,
+                      color: titleColor ?? Colors.cyan,
                     ),
                   ),
                 ),
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 16,
-                  color: Colors.indigo,
+                  color: Colors.white30,
                 ),
               ],
             ),
