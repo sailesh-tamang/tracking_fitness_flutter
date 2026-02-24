@@ -68,6 +68,9 @@ dependencies:
   dartz: ^0.10.1
   flutter_launcher_icons: ^0.14.4
   test_cov_console: ^0.2.2
+  
+  # Step Tracking
+  pedometer: ^4.0.2
 
 
 dev_dependencies:
