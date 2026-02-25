@@ -7,7 +7,7 @@ class ApiEndpoints {
 
   // Configuration
   static const bool isPhysicalDevice = true; // Set to true for physical device
-  static const String _ipAddress = '10.61.35.98'; // Replace with your computer's actual IP address
+  static const String _ipAddress = '172.25.0.242'; // Replace with your computer's actual IP address
   static const int _port = 3000;
 
   // Base URLs
@@ -33,6 +33,7 @@ class ApiEndpoints {
   static const String customerLogin = '/customers/login';
   static const String customerRegister = '/customers/signup';
   static const String customerProfile = '/customers/upload-image';
+  static String customerUpdate(String id) => '/customers/$id';
 
   // ============ Steps Endpoints ============
   static const String stepsToday = '/steps/today';

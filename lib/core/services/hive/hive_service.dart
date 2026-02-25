@@ -49,16 +49,35 @@ class HiveService {
   // Register user
   Future<AuthHiveModel> register(AuthHiveModel user) async {
     await _authBox.put(user.authId, user);
+    print('✅ User registered/updated in Hive: ${user.authId} (${user.email})');
+    print('🔐 Password stored: ${user.password?.isEmpty == true ? "EMPTY" : "EXISTS (${user.password?.length} chars)"}');
     return user;
   }
 
   // Login - find user by email and password
   AuthHiveModel? login(String email, String password) {
     try {
-      return _authBox.values.firstWhere(
+      print('🔍 Searching Hive for user: $email');
+      print('📊 Total users in Hive: ${_authBox.length}');
+      
+      final user = _authBox.values.firstWhere(
         (user) => user.email == email && user.password == password,
       );
+      
+      print('✅ User found and password matched');
+      return user;
     } catch (e) {
+      print('❌ User not found or password mismatch');
+      
+      // Try to find user by email to see if user exists
+      try {
+        final userByEmail = _authBox.values.firstWhere((user) => user.email == email);
+        print('ℹ️ User exists with email: $email');
+        print('⚠️ Password mismatch (stored: ${userByEmail.password?.length} chars, entered: ${password.length} chars)');
+      } catch (e2) {
+        print('ℹ️ User does not exist with email: $email');
+      }
+      
       return null;
     }
   }
@@ -79,11 +98,14 @@ class HiveService {
 
   // Update user
   Future<bool> updateUser(AuthHiveModel user) async {
-    if (_authBox.containsKey(user.authId)) {
+    try {
       await _authBox.put(user.authId, user);
+      print('✅ User updated in Hive: ${user.authId} (${user.email})');
       return true;
+    } catch (e) {
+      print('❌ Error updating user in Hive: $e');
+      return false;
     }
-    return false;
   }
 
   // Delete user

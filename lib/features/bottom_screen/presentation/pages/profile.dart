@@ -158,8 +158,15 @@ class _ProfileSccreenState extends ConsumerState<ProfileScreen> {
                     _MenuItem(
                       icon: Icons.person_outline_rounded,
                       title: 'Edit Profile',
-                      onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfile()));
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const EditProfile()),
+                        );
+                        if (mounted) {
+                          ref.invalidate(userSessionServiceProvider);
+                          setState(() {});
+                        }
                       },
                     ),
                     const SizedBox(height: 12),

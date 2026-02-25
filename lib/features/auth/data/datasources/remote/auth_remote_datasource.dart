@@ -132,6 +132,36 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource{
       rethrow;
     }
   }
+
+  @override
+  Future<AuthApiModel> updateUser(String userId, AuthApiModel user) async {
+    final response = await _apiClient.put(
+      ApiEndpoints.customerUpdate(userId),
+      data: {
+        'name': user.fullName,
+        'email': user.email,
+        'phoneNumber': user.phoneNumber,
+      },
+    );
+
+    if (response.data['success'] == true) {
+      final data = response.data['data'] as Map<String, dynamic>;
+      final updatedUser = AuthApiModel.fromJson(data);
+      
+      // Update session with new data
+      await _userSessionService.saveUserSession(
+        userId: updatedUser.id!,
+        email: updatedUser.email,
+        fullName: updatedUser.fullName,
+        phoneNumber: updatedUser.phoneNumber,
+        profilePicture: updatedUser.profilePicture,
+      );
+      
+      return updatedUser;
+    } else {
+      throw Exception(response.data['message'] ?? 'Update failed');
+    }
+  }
   
   
 }

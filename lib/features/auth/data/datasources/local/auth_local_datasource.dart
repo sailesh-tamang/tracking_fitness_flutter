@@ -32,9 +32,13 @@ class AuthLocalDatasource implements IAuthLocalDataSource {
   @override
   Future<AuthHiveModel?> login(String email, String password) async {
     try {
+      print('🔍 Attempting local login for: $email');
       final user = _hiveService.login(email, password);
       if (user != null && user.authId != null) {
-        // Save user session to SharedPreferences : Pachi app restart vayo vani pani user logged in rahos
+        print('✅ User found in Hive: ${user.email}');
+        print('🔐 Password matches: YES');
+        
+        // Save user session to SharedPreferences
         await _userSessionService.saveUserSession(
           userId: user.authId!,
           email: user.email,
@@ -42,9 +46,13 @@ class AuthLocalDatasource implements IAuthLocalDataSource {
           phoneNumber: user.phoneNumber,
           profilePicture: user.profilePicture,
         );
+        print('✅ Session saved');
+      } else {
+        print('❌ Login failed: Invalid email or password');
       }
       return user;
     } catch (e) {
+      print('❌ Login error: $e');
       return null;
     }
   }
@@ -54,18 +62,56 @@ class AuthLocalDatasource implements IAuthLocalDataSource {
     try {
       // Check if user is logged in
       if (!_userSessionService.isLoggedIn()) {
+        print('⚠️ getCurrentUser: User not logged in (no session)');
         return null;
       }
 
       // Get user ID from session
       final userId = _userSessionService.getCurrentUserId();
       if (userId == null) {
+        print('⚠️ getCurrentUser: No userId in session');
         return null;
       }
 
-      // Fetch user from Hive database
-      return _hiveService.getUserById(userId);
+      print('🔍 Looking for user in Hive: $userId');
+      
+      // Try to fetch user from Hive database
+      var user = _hiveService.getUserById(userId);
+      
+      if (user != null) {
+        print('✅ User found in Hive: ${user.email}');
+        print('🔐 Password stored: ${user.password?.isEmpty == true ? "EMPTY" : "EXISTS (${user.password?.length} chars)"}');
+      }
+      
+      // If user is in session but not in Hive, create Hive record from session data
+      if (user == null) {
+        print('⚠️ User found in session but not in Hive. Syncing to local database...');
+        final email = _userSessionService.getCurrentUserEmail();
+        final fullName = _userSessionService.getCurrentUserFullName();
+        final phoneNumber = _userSessionService.getCurrentUserPhoneNumber();
+        final profilePicture = _userSessionService.getCurrentUserProfilePicture();
+        
+        if (email != null && fullName != null) {
+          // Create user in Hive with session data
+          // Note: Password is not stored in session, so we use a placeholder
+          user = AuthHiveModel(
+            authId: userId,
+            email: email,
+            fullName: fullName,
+            phoneNumber: phoneNumber,
+            password: '', // Placeholder - user needs to re-login for password verification
+            profilePicture: profilePicture,
+          );
+          
+          await _hiveService.register(user);
+          print('✅ User synced to local database (without password)');
+          print('⚠️ User needs to log out and log back in for password verification');
+        }
+      }
+      
+      return user;
     } catch (e) {
+      print('❌ Error getting current user: $e');
       return null;
     }
   }
@@ -101,8 +147,24 @@ class AuthLocalDatasource implements IAuthLocalDataSource {
   @override
   Future<bool> updateUser(AuthHiveModel user) async {
     try {
-      return await _hiveService.updateUser(user);
+      print('📝 Updating user in Hive: ${user.authId} (${user.email})');
+      print('🔐 Password to store: ${user.password?.isEmpty == true ? "EMPTY" : "EXISTS (${user.password?.length} chars)"}');
+      
+      final success = await _hiveService.updateUser(user);
+      if (success && user.authId != null) {
+        // Update session with new user data
+        await _userSessionService.saveUserSession(
+          userId: user.authId!,
+          email: user.email,
+          fullName: user.fullName,
+          phoneNumber: user.phoneNumber,
+          profilePicture: user.profilePicture,
+        );
+        print('✅ Session updated after Hive update');
+      }
+      return success;
     } catch (e) {
+      print('❌ Error updating user: $e');
       return false;
     }
   }
