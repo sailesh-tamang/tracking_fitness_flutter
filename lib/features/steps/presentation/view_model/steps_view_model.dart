@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:dartz/dartz.dart';
+import 'package:fitness_tracker/core/error/failures.dart';
 import 'package:fitness_tracker/features/steps/domain/usecases/fetch_today_steps_usecase.dart';
 import 'package:fitness_tracker/features/steps/domain/usecases/sync_today_steps_usecase.dart';
 import 'package:fitness_tracker/features/steps/domain/usecases/watch_steps_usecase.dart';
@@ -63,8 +65,8 @@ class StepsViewModel extends Notifier<StepsState> {
     print('👀 [Steps] Starting sensor stream subscription...');
     _startWatchingSensor();
 
-    // Start periodic sync timer (every 15 seconds)
-    print('⏱️ [Steps] Starting auto-sync timer (15s)...');
+    // Start periodic sync timer (every 30 seconds)
+    print('⏱️ [Steps] Starting auto-sync timer (30s)...');
     _startPeriodicSync();
     
     print('✅ [Steps] Step tracking initialized successfully!');
@@ -134,7 +136,7 @@ class StepsViewModel extends Notifier<StepsState> {
   }
 
   void _startPeriodicSync() {
-    _syncTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+    _syncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       syncNow();
     });
   }
@@ -150,39 +152,66 @@ class StepsViewModel extends Notifier<StepsState> {
     print('🔄 [Steps] Starting sync... Current steps: ${state.steps}');
     state = state.copyWith(status: StepsStatus.syncing);
 
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final result = await _syncTodayStepsUsecase(
-      SyncStepsParams(date: today, steps: state.steps),
-    );
+    try {
+      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      
+      // Add timeout to prevent hanging
+      final result = await _syncTodayStepsUsecase(
+        SyncStepsParams(date: today, steps: state.steps),
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          print('⏱️ [Steps] Sync timeout after 10 seconds');
+          return Left(ApiFailure(message: 'Sync timeout'));
+        },
+      );
 
-    result.fold(
-      (failure) {
-        print('❌ [Steps] Sync failed: ${failure.message}');
-        state = state.copyWith(
-          status: StepsStatus.syncFailed,
-          errorMessage: failure.message,
-        );
-        // Revert to previous status after a delay
-        Future.delayed(const Duration(seconds: 2), () {
-          if (state.status == StepsStatus.syncFailed) {
-            state = state.copyWith(status: previousStatus);
-          }
-        });
-      },
-      (stepsEntity) {
-        print('✅ [Steps] Sync successful! Steps: ${stepsEntity.steps}');
-        state = state.copyWith(
-          status: StepsStatus.syncSuccess,
-          lastSyncTime: DateTime.now(),
-        );
-        // Revert to loaded status after a delay
-        Future.delayed(const Duration(seconds: 2), () {
-          if (state.status == StepsStatus.syncSuccess) {
-            state = state.copyWith(status: StepsStatus.loaded);
-          }
-        });
-      },
-    );
+      result.fold(
+        (failure) {
+          print('❌ [Steps] Sync failed: ${failure.message}');
+          state = state.copyWith(
+            status: StepsStatus.syncFailed,
+            errorMessage: failure.message,
+          );
+          // Revert to previous status after a delay
+          Future.delayed(const Duration(seconds: 2), () {
+            if (state.status == StepsStatus.syncFailed) {
+              state = state.copyWith(status: previousStatus == StepsStatus.syncing ? StepsStatus.loaded : previousStatus);
+            }
+          });
+        },
+        (stepsEntity) {
+          print('✅ [Steps] Sync successful! Steps: ${stepsEntity.steps}');
+          state = state.copyWith(
+            status: StepsStatus.syncSuccess,
+            lastSyncTime: DateTime.now(),
+          );
+          // Revert to loaded status after a delay
+          Future.delayed(const Duration(seconds: 2), () {
+            if (state.status == StepsStatus.syncSuccess) {
+              state = state.copyWith(status: StepsStatus.loaded);
+            }
+          });
+        },
+      );
+    } catch (e) {
+      // Catch any unexpected errors
+      print('❌ [Steps] Unexpected sync error: $e');
+      state = state.copyWith(
+        status: StepsStatus.syncFailed,
+        errorMessage: 'Sync error: $e',
+      );
+      // Always revert back to loaded status
+      Future.delayed(const Duration(seconds: 2), () {
+        state = state.copyWith(status: StepsStatus.loaded);
+      });
+    }
+  }
+
+  // Manual reset if state gets stuck
+  void resetStatus() {
+    print('🔄 [Steps] Manually resetting status to loaded');
+    state = state.copyWith(status: StepsStatus.loaded);
   }
 
   void dispose() {

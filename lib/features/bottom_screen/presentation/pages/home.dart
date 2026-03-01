@@ -153,6 +153,42 @@ class _HomeState extends ConsumerState<Home> with WidgetsBindingObserver {
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
+            // Reset button if stuck syncing
+            if (stepsState.status == StepsStatus.syncing) ...[
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () {
+                  ref.read(stepsViewModelProvider.notifier).resetStatus();
+                },
+                icon: const Icon(Icons.refresh, color: Colors.orange),
+                label: const Text(
+                  'Stuck? Reset Status',
+                  style: TextStyle(color: Colors.orange),
+                ),
+              ),
+            ],
+            if (stepsState.status == StepsStatus.syncFailed) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red[900],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        stepsState.errorMessage ?? 'Sync failed',
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             if (!stepsState.trackingAvailable) ...[
               const SizedBox(height: 16),
               Container(
