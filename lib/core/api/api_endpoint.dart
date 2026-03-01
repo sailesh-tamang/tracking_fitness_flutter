@@ -7,7 +7,7 @@ class ApiEndpoints {
 
   // Configuration
   static const bool isPhysicalDevice = true; // Set to true for physical device
-  static const String _ipAddress = '172.25.0.242'; // Replace with your computer's actual IP address
+  static const String _ipAddress = '192.168.137.1'; // Replace with your computer's actual IP address
   static const int _port = 3000;
 
   // Base URLs

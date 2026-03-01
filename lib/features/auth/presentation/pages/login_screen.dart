@@ -1,4 +1,6 @@
 import 'package:fitness_tracker/features/auth/domain/usecases/login_usecase.dart';
+import 'package:fitness_tracker/core/services/biometric/biometric_auth_service.dart';
+import 'package:fitness_tracker/core/services/storage/user_session_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'signup_screen.dart';
@@ -15,6 +17,73 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isBiometricAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometricAvailability();
+  }
+
+  Future<void> _checkBiometricAvailability() async {
+    final biometricService = ref.read(biometricAuthServiceProvider);
+    final isAvailable = await biometricService.isBiometricLoginAvailable();
+    if (mounted) {
+      setState(() => _isBiometricAvailable = isAvailable);
+    }
+  }
+
+  Future<void> _authenticateWithBiometric() async {
+    final biometricService = ref.read(biometricAuthServiceProvider);
+    final userSessionService = ref.read(userSessionServiceProvider);
+
+    // Check if biometric session data exists to restore login state
+    if (!biometricService.hasBiometricSessionData()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please login with email/password first'),
+        ),
+      );
+      return;
+    }
+
+    final authenticated = await biometricService.authenticate(
+      reason: 'Authenticate to login',
+    );
+
+    if (authenticated) {
+      final restored = await biometricService.restoreSessionFromBiometricData(
+        userSessionService,
+      );
+
+      if (!restored) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No saved biometric session found. Login once with email/password.'),
+            ),
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login successful')),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Authentication failed')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +169,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text(failure.message)));
                         }, (auth) {
+                          final biometricService =
+                              ref.read(biometricAuthServiceProvider);
+                          if (biometricService.isBiometricEnabled() &&
+                              auth.authId != null &&
+                              auth.authId!.isNotEmpty) {
+                            biometricService.saveBiometricSessionData(
+                              userId: auth.authId!,
+                              email: auth.email,
+                              fullName: auth.fullName,
+                              phoneNumber: auth.phoneNumber,
+                              profilePicture: auth.profilePicture,
+                            );
+                          }
+
                           ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Login successful')));
                           Navigator.pushReplacement(
@@ -132,6 +215,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
 
               const SizedBox(height: 25),
+
+              /// Fingerprint Login Option
+              if (_isBiometricAvailable)
+                Center(
+                  child: Column(
+                    children: [
+                      const Text(
+                        'OR',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 15),
+                      GestureDetector(
+                        onTap: _authenticateWithBiometric,
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: const Color(0xffD4FF00).withAlpha(30),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xffD4FF00),
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.fingerprint,
+                            color: Color(0xffD4FF00),
+                            size: 40,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Login with fingerprint',
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              if (_isBiometricAvailable) const SizedBox(height: 25),
 
               /// Register Link
               Center(

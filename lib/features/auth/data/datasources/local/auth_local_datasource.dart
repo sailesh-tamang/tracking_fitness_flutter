@@ -1,4 +1,5 @@
 import 'package:fitness_tracker/core/services/hive/hive_service.dart';
+import 'package:fitness_tracker/core/services/biometric/biometric_auth_service.dart';
 import 'package:fitness_tracker/core/services/storage/user_session_service.dart';
 import 'package:fitness_tracker/features/auth/data/datasources/auth_datasource.dart';
 import 'package:fitness_tracker/features/auth/data/models/auth_hive_model.dart';
@@ -8,21 +9,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final authLocalDatasourceProvider = Provider<AuthLocalDatasource>((ref) {
   final hiveService = ref.read(hiveServiceProvider);
   final userSessionService = ref.read(userSessionServiceProvider);
+  final biometricAuthService = ref.read(biometricAuthServiceProvider);
   return AuthLocalDatasource(
     hiveService: hiveService,
     userSessionService: userSessionService,
+    biometricAuthService: biometricAuthService,
   );
 });
 
 class AuthLocalDatasource implements IAuthLocalDataSource {
   final HiveService _hiveService;
   final UserSessionService _userSessionService;
+  final BiometricAuthService _biometricAuthService;
 
   AuthLocalDatasource({
     required HiveService hiveService,
     required UserSessionService userSessionService,
+    required BiometricAuthService biometricAuthService,
   }) : _hiveService = hiveService,
-       _userSessionService = userSessionService;
+       _userSessionService = userSessionService,
+       _biometricAuthService = biometricAuthService;
 
   @override
   Future<AuthHiveModel> register(AuthHiveModel user) async {
@@ -119,6 +125,22 @@ class AuthLocalDatasource implements IAuthLocalDataSource {
   @override
   Future<bool> logout() async {
     try {
+      if (_biometricAuthService.isBiometricEnabled()) {
+        final userId = _userSessionService.getCurrentUserId();
+        final email = _userSessionService.getCurrentUserEmail();
+        final fullName = _userSessionService.getCurrentUserFullName();
+
+        if (userId != null && email != null && fullName != null) {
+          await _biometricAuthService.saveBiometricSessionData(
+            userId: userId,
+            email: email,
+            fullName: fullName,
+            phoneNumber: _userSessionService.getCurrentUserPhoneNumber(),
+            profilePicture: _userSessionService.getCurrentUserProfilePicture(),
+          );
+        }
+      }
+
       await _userSessionService.clearSession();
       return true;
     } catch (e) {

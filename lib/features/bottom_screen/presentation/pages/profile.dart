@@ -1,5 +1,6 @@
 import 'package:fitness_tracker/core/api/api_endpoint.dart';
 import 'package:fitness_tracker/core/services/storage/user_session_service.dart';
+import 'package:fitness_tracker/core/services/biometric/biometric_auth_service.dart';
 import 'package:fitness_tracker/features/auth/presentation/pages/login_screen.dart';
 import 'package:fitness_tracker/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:fitness_tracker/features/profilefeature_screen/page/edit_profile.dart';
@@ -14,6 +15,9 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileSccreenState extends ConsumerState<ProfileScreen> {
+  bool _isBiometricEnabled = false;
+  bool _isBiometricAvailable = false;
+  
   @override
   void initState() {
     super.initState();
@@ -21,7 +25,24 @@ class _ProfileSccreenState extends ConsumerState<ProfileScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // print('👤 ProfileScreen: Refreshing session data...');
       ref.invalidate(userSessionServiceProvider);
+      _checkBiometricAvailability();
     });
+  }
+  
+  Future<void> _checkBiometricAvailability() async {
+    final biometricService = ref.read(biometricAuthServiceProvider);
+    final canCheckBiometrics = await biometricService.canCheckBiometrics();
+    final isDeviceSupported = await biometricService.isDeviceSupported();
+    final availableBiometrics = await biometricService.getAvailableBiometrics();
+    final isEnabled = biometricService.isBiometricEnabled();
+    
+    if (mounted) {
+      setState(() {
+        _isBiometricAvailable =
+            (canCheckBiometrics || isDeviceSupported) && availableBiometrics.isNotEmpty;
+        _isBiometricEnabled = isEnabled;
+      });
+    }
   }
 
   @override
@@ -193,6 +214,86 @@ class _ProfileSccreenState extends ConsumerState<ProfileScreen> {
                       title: 'About',
                       onTap: () {},
                     ),
+                    const SizedBox(height: 12),
+                    // Fingerprint Toggle
+                    if (_isBiometricAvailable)
+                      _BiometricToggleItem(
+                        icon: Icons.fingerprint,
+                        title: 'Use Fingerprint',
+                        isEnabled: _isBiometricEnabled,
+                        onToggle: (value) async {
+                          final biometricService = ref.read(biometricAuthServiceProvider);
+                          
+                          if (value) {
+                            final availableBiometrics =
+                                await biometricService.getAvailableBiometrics();
+                            if (availableBiometrics.isEmpty) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('No fingerprint is set on this device'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                              return;
+                            }
+
+                            // User wants to enable biometric - authenticate first
+                            final authenticated = await biometricService.authenticate(
+                              reason: 'Authenticate to enable fingerprint login',
+                            );
+                            
+                            if (authenticated) {
+                              await biometricService.setBiometricEnabled(true);
+                              final userSessionService = ref.read(userSessionServiceProvider);
+                              final userId = userSessionService.getCurrentUserId();
+                              final userEmail = userSessionService.getCurrentUserEmail();
+                              final userFullName = userSessionService.getCurrentUserFullName();
+
+                              if (userId != null && userEmail != null && userFullName != null) {
+                                await biometricService.saveBiometricSessionData(
+                                  userId: userId,
+                                  email: userEmail,
+                                  fullName: userFullName,
+                                  phoneNumber: userSessionService.getCurrentUserPhoneNumber(),
+                                  profilePicture: userSessionService.getCurrentUserProfilePicture(),
+                                );
+                              }
+
+                              if (mounted) {
+                                setState(() => _isBiometricEnabled = true);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Fingerprint login enabled'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            } else {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Fingerprint authentication failed'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          } else {
+                            // User wants to disable biometric
+                            await biometricService.setBiometricEnabled(false);
+                            if (mounted) {
+                              setState(() => _isBiometricEnabled = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Fingerprint login disabled'),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
                     const SizedBox(height: 50),
                     _MenuItem(
                       icon: Icons.logout_rounded,
@@ -253,6 +354,69 @@ class _ProfileSccreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _BiometricToggleItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final bool isEnabled;
+  final Function(bool) onToggle;
+  final Color? iconColor;
+
+  const _BiometricToggleItem({
+    required this.icon,
+    required this.title,
+    required this.isEnabled,
+    required this.onToggle,
+    this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1F1F1F),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: (iconColor ?? Colors.lime).withAlpha(30),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: iconColor ?? Colors.cyan,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.cyan,
+                ),
+              ),
+            ),
+            Switch(
+              value: isEnabled,
+              onChanged: onToggle,
+              activeColor: const Color(0xffD4FF00),
+              activeTrackColor: const Color(0xffD4FF00).withAlpha(100),
+            ),
+          ],
+        ),
       ),
     );
   }
