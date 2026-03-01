@@ -69,9 +69,16 @@ class _ProfileSccreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Column(
+                  children: [
               // Header with black background
               Container(
                 width: double.infinity,
@@ -308,8 +315,12 @@ class _ProfileSccreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
             ],
-          ),
-        ) )
+              ),
+            ),
+          );
+          }
+        ),
+      ),
     );
   }
 

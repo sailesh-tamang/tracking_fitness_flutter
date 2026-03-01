@@ -48,39 +48,58 @@ class _ExcerisePlanState extends State<ExcerisePlan> {
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.black,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+            
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            _youtubeController?.dispose();
+                            Navigator.pop(context);
+                          },
+                          icon: const Icon(Icons.close, color: Colors.white),
+                        ),
+                      ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {
-                      _youtubeController?.dispose();
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
+                  if (_youtubeController != null)
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: isLandscape ? 300 : 250,
+                        maxWidth: constraints.maxWidth,
+                      ),
+                      child: YoutubePlayer(
+                        controller: _youtubeController!,
+                        showVideoProgressIndicator: true,
+                        progressIndicatorColor: const Color(0xFF9CFF00),
+                      ),
+                    ),
                 ],
               ),
-            ),
-            if (_youtubeController != null)
-              YoutubePlayer(
-                controller: _youtubeController!,
-                showVideoProgressIndicator: true,
-                progressIndicatorColor: const Color(0xFF9CFF00),
-              ),
-          ],
+            );
+          },
         ),
       ),
     );

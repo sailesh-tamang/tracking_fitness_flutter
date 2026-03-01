@@ -48,39 +48,58 @@ class _MealPlanState extends State<MealPlan> {
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.black,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+            
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            _youtubeController?.dispose();
+                            Navigator.pop(context);
+                          },
+                          icon: const Icon(Icons.close, color: Colors.white),
+                        ),
+                      ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {
-                      _youtubeController?.dispose();
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
+                  if (_youtubeController != null)
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: isLandscape ? 300 : 250,
+                        maxWidth: constraints.maxWidth,
+                      ),
+                      child: YoutubePlayer(
+                        controller: _youtubeController!,
+                        showVideoProgressIndicator: true,
+                        progressIndicatorColor: const Color(0xFF9CFF00),
+                      ),
+                    ),
                 ],
               ),
-            ),
-            if (_youtubeController != null)
-              YoutubePlayer(
-                controller: _youtubeController!,
-                showVideoProgressIndicator: true,
-                progressIndicatorColor: const Color(0xFF9CFF00),
-              ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -100,12 +119,23 @@ class _MealPlanState extends State<MealPlan> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight - 40),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
               // -------- TAGS SECTION --------
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -152,8 +182,12 @@ class _MealPlanState extends State<MealPlan> {
 
               const SizedBox(height: 20),
             ],
-          ),
-        ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
