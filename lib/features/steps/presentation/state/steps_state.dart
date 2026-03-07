@@ -25,6 +25,20 @@ class StepsState extends Equatable {
     this.lastSyncTime,
   });
 
+  // Average human step length in meters (0.762m or 2.5 feet)
+  static const double _stepLengthMeters = 0.762;
+  // Average calories burned per step (for 70kg person)
+  static const double _caloriesPerStep = 0.04;
+
+  // Calculate distance in meters
+  double get distanceInMeters => steps * _stepLengthMeters;
+
+  // Calculate distance in kilometers
+  double get distanceInKilometers => distanceInMeters / 1000;
+
+  // Calculate calories burned
+  double get caloriesBurned => steps * _caloriesPerStep;
+
   StepsState copyWith({
     StepsStatus? status,
     int? steps,
@@ -39,6 +53,20 @@ class StepsState extends Equatable {
       errorMessage: errorMessage ?? this.errorMessage,
       lastSyncTime: lastSyncTime ?? this.lastSyncTime,
     );
+  }
+
+  // Format distance for display
+  String get formattedDistance {
+    if (distanceInKilometers >= 1.0) {
+      return '${distanceInKilometers.toStringAsFixed(2)} km';
+    } else {
+      return '${distanceInMeters.toStringAsFixed(0)} m';
+    }
+  }
+
+  // Format calories for display
+  String get formattedCalories {
+    return '${caloriesBurned.toStringAsFixed(1)} cal';
   }
 
   @override

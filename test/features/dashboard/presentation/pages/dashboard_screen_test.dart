@@ -30,7 +30,7 @@ void main() {
     // Tap Excerises
     await tester.tap(find.text('excerises'));
     await tester.pumpAndSettle();
-    expect(find.text('Excerise Tips'), findsOneWidget);
+    expect(find.text('Exercise'), findsOneWidget);
 
     // Tap Profile
     await tester.tap(find.text('profile'));

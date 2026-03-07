@@ -13,7 +13,6 @@ class EditProfile extends ConsumerStatefulWidget {
   @override
   ConsumerState<EditProfile> createState() => _EditProfileState();
 }
-
 class _EditProfileState extends ConsumerState<EditProfile> {
   final List<File> _selectedMedia = [];
   final ImagePicker _imagePicker = ImagePicker();
@@ -23,10 +22,15 @@ class _EditProfileState extends ConsumerState<EditProfile> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
   String _initialName = '';
   String _initialEmail = '';
   String _initialPhone = '';
   bool _hasPendingChanges = false;
+  double? _calculatedBMI;
+  String _bmiCategory = '';
 
   @override
   void initState() {
@@ -50,6 +54,9 @@ class _EditProfileState extends ConsumerState<EditProfile> {
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
+    _ageController.dispose();
     super.dispose();
   }
 
@@ -455,6 +462,65 @@ class _EditProfileState extends ConsumerState<EditProfile> {
     }
   }
 
+  void _calculateBMI() {
+    final heightText = _heightController.text.trim();
+    final weightText = _weightController.text.trim();
+
+    if (heightText.isEmpty || weightText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter height (feet) and weight')),
+      );
+      return;
+    }
+
+    final height = double.tryParse(heightText);
+    final weight = double.tryParse(weightText);
+
+    if (height == null || weight == null || height <= 0 || weight <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter valid height (feet) and weight')),
+      );
+      return;
+    }
+
+    final heightInMeters = height * 0.3048;
+    final bmi = weight / (heightInMeters * heightInMeters);
+
+    String category;
+    if (bmi < 18.5) {
+      category = 'Underweight';
+    } else if (bmi < 25) {
+      category = 'Normal weight';
+    } else if (bmi < 30) {
+      category = 'Overweight';
+    } else {
+      category = 'Obese';
+    }
+
+    setState(() {
+      _calculatedBMI = bmi;
+      _bmiCategory = category;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('BMI calculated successfully!')),
+    );
+  }
+
+  Color _getBMIColor() {
+    if (_calculatedBMI == null) return Colors.cyan;
+
+    if (_calculatedBMI! < 18.5) {
+      return Colors.blue;
+    } else if (_calculatedBMI! < 25) {
+      return Colors.green;
+    } else if (_calculatedBMI! < 30) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userSessionService = ref.watch(userSessionServiceProvider);
@@ -656,6 +722,111 @@ class _EditProfileState extends ConsumerState<EditProfile> {
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
                     ),
+                    const SizedBox(height: 32),
+                    // BMI Section Header
+                    const Row(
+                      children: [
+                        Icon(Icons.monitor_weight, color: Colors.cyan, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Health Information',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _editableProfileField(
+                      icon: Icons.height,
+                      label: 'Height (ft)',
+                      controller: _heightController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    _editableProfileField(
+                      icon: Icons.monitor_weight,
+                      label: 'Weight (kg)',
+                      controller: _weightController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    _editableProfileField(
+                      icon: Icons.cake,
+                      label: 'Age (years)',
+                      controller: _ageController,
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+                    // Calculate BMI Button
+                    ElevatedButton.icon(
+                      onPressed: _calculateBMI,
+                      icon: const Icon(Icons.calculate, color: Colors.white),
+                      label: const Text(
+                        'Calculate BMI',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    // BMI Result Display
+                    if (_calculatedBMI != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: _getBMIColor().withAlpha(30),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _getBMIColor(), width: 2),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.favorite, color: _getBMIColor(), size: 24),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Your BMI',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _calculatedBMI!.toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                color: _getBMIColor(),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _bmiCategory,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: _getBMIColor(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

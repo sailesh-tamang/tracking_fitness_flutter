@@ -29,7 +29,7 @@ void main() {
     );
 
     // Basic UI
-    expect(find.text('My Profile'), findsOneWidget);
+    expect(find.text('Edit Profile'), findsOneWidget);
     expect(find.text('Full Name'), findsOneWidget);
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Phone Number'), findsOneWidget);
@@ -45,7 +45,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Bottom sheet content should be visible
-    expect(find.text('Open Camera'), findsOneWidget);
-    expect(find.text('Open Gallery'), findsOneWidget);
+    expect(find.text('Camera'), findsOneWidget);
+    expect(find.text('Gallery'), findsOneWidget);
   });
 }

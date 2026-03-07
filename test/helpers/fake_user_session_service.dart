@@ -2,32 +2,60 @@ import 'package:fitness_tracker/core/services/storage/user_session_service.dart'
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeUserSessionService implements UserSessionService {
-  @override
-  String? getCurrentUserFullName() => 'Test User';
+  final String fullName;
+  final String email;
+  final String userId;
+  final String phoneNumber;
+  final String? profilePicture;
+  final bool loggedIn;
+
+  FakeUserSessionService({
+    this.fullName = 'Test User',
+    this.email = 'test@gmail.com',
+    this.userId = 'test_id_123',
+    this.phoneNumber = '1234567890',
+    this.profilePicture,
+    this.loggedIn = true,
+  });
 
   @override
-  String? getCurrentUserEmail() => 'test@gmail.com';
+  String? getCurrentUserFullName() => fullName;
 
   @override
-  String? getCurrentUserProfilePicture() => '';
+  String? getCurrentUserEmail() => email;
 
   @override
-  Future<void> clearSession() async {}
+  String? getCurrentUserProfilePicture() => profilePicture;
 
   @override
-  String? getCurrentUserId() => 'test_id';
+  Future<void> clearSession() async {
+    // No-op for fake implementation
+  }
 
   @override
-  String? getCurrentUserPhoneNumber() => '1234567890';
+  String? getCurrentUserId() => userId;
 
   @override
-  bool isLoggedIn() => true;
+  String? getCurrentUserPhoneNumber() => phoneNumber;
 
   @override
-  Future<void> saveUserSession({required String userId, required String email, required String fullName, String? phoneNumber, String? profilePicture}) async {}
+  bool isLoggedIn() => loggedIn;
 
   @override
-  Future<void> updateUserProfilePicture(String pictureFileName) async {}
+  Future<void> saveUserSession({
+    required String userId,
+    required String email,
+    required String fullName,
+    String? phoneNumber,
+    String? profilePicture,
+  }) async {
+    // No-op for fake implementation
+  }
+
+  @override
+  Future<void> updateUserProfilePicture(String pictureFileName) async {
+    // No-op for fake implementation
+  }
 }
 
 class FakeSharedPreferences implements SharedPreferences {
@@ -49,7 +77,8 @@ class FakeSharedPreferences implements SharedPreferences {
   String? getString(String key) => _data[key] as String?;
 
   @override
-  List<String>? getStringList(String key) => _data[key] as List<String>?;
+  List<String>? getStringList(String key) =>
+      _data[key] as List<String>?;
 
   @override
   Future<bool> remove(String key) async {
